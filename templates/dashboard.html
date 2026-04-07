@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseML - Employee Attrition Predictor</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f1117;
+            --surface: #1a1f2e;
+            --light: #f1f5f9;
+            --muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: clamp(2rem, 4vw, 2.6rem);
+            margin-bottom: 0.25rem;
+        }
+
+        .tagline {
+            color: var(--muted);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            color: var(--primary);
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.85rem;
+            margin-top: 0.35rem;
+            letter-spacing: 0.03em;
+        }
+
+        .form-section,
+        .prediction-result {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+
+        .form-section h2 {
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .form-help {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+
+        input,
+        select {
+            background: var(--dark);
+            color: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 0.4rem;
+            padding: 0.6rem 0.65rem;
+            font-size: 0.95rem;
+        }
+
+        input:focus,
+        select:focus {
+            outline: 2px solid rgba(59, 130, 246, 0.45);
+            border-color: var(--primary);
+        }
+
+        .button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 0.45rem;
+            padding: 0.75rem 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background: #2563eb;
+        }
+
+        .button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+
+        details.advanced {
+            margin-bottom: 1rem;
+            border: 1px dashed var(--border);
+            border-radius: 0.5rem;
+            padding: 0.7rem;
+        }
+
+        details.advanced summary {
+            cursor: pointer;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+
+        .error {
+            margin-top: 1rem;
+            display: none;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: #fecaca;
+            border-radius: 0.4rem;
+            padding: 0.75rem;
+            font-size: 0.92rem;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .prediction-result {
+            margin-top: 1.25rem;
+            display: none;
+        }
+
+        .prediction-result.show {
+            display: block;
+        }
+
+        .risk-indicator {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .risk-circle {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .risk-circle.high {
+            background: var(--danger);
+        }
+
+        .risk-circle.medium {
+            background: var(--warning);
+        }
+
+        .risk-circle.low {
+            background: var(--success);
+        }
+
+        .risk-details p {
+            color: var(--muted);
+        }
+
+        .risk-factors {
+            background: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 0.45rem;
+            padding: 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .risk-factor-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: rgba(239, 68, 68, 0.08);
+            border-left: 3px solid var(--danger);
+            border-radius: 0.25rem;
+            margin-bottom: 0.45rem;
+            font-size: 0.9rem;
+        }
+
+        .recommendation {
+            margin-top: 0.9rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid var(--primary);
+            border-radius: 0.3rem;
+            padding: 0.7rem;
+            font-size: 0.92rem;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.4rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .nav-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #64748b;
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PulseML</h1>
+            <p class="tagline">Employee Attrition Prediction and Risk Analysis</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">16.1%</div>
+                <div class="stat-label">Dataset Attrition Rate</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">79.7%</div>
+                <div class="stat-label">Model ROC-AUC</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">25</div>
+                <div class="stat-label">Features Used</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1,470</div>
+                <div class="stat-label">Employees in Dataset</div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Predict Attrition Risk</h2>
+            <p class="form-help">Single prediction form is below. Basic fields are visible first; open advanced fields only when needed.</p>
+
+            <form id="predictionForm">
+                <div class="form-grid">
+                    <div class="form-group"><label for="age">Age</label><input id="age" name="Age" type="number" min="18" max="70" value="35" required></div>
+                    <div class="form-group"><label for="department">Department</label><select id="department" name="Department" required><option value="Sales">Sales</option><option value="HR">HR</option><option value="IT">IT</option></select></div>
+                    <div class="form-group"><label for="jobrole">Job Role</label><input id="jobrole" name="JobRole" type="text" value="Sales Executive" required></div>
+                    <div class="form-group"><label for="income">Monthly Income</label><input id="income" name="MonthlyIncome" type="number" min="1" value="5000" required></div>
+                    <div class="form-group"><label for="overtime">OverTime</label><select id="overtime" name="OverTime" required><option value="Yes">Yes</option><option value="No">No</option></select></div>
+                    <div class="form-group"><label for="yearscompany">Years At Company</label><input id="yearscompany" name="YearsAtCompany" type="number" min="0" value="2" required></div>
+                    <div class="form-group"><label for="jobsatisfaction">Job Satisfaction (1-4)</label><input id="jobsatisfaction" name="JobSatisfaction" type="number" min="1" max="4" value="2" required></div>
+                    <div class="form-group"><label for="worklifebalance">Work Life Balance (1-4)</label><input id="worklifebalance" name="WorkLifeBalance" type="number" min="1" max="4" value="2" required></div>
+                    <div class="form-group"><label for="distance">Distance From Home</label><input id="distance" name="DistanceFromHome" type="number" min="0" value="10" required></div>
+                    <div class="form-group"><label for="totalyears">Total Working Years</label><input id="totalyears" name="TotalWorkingYears" type="number" min="0" value="8" required></div>
+                    <div class="form-group"><label for="marital">Marital Status</label><select id="marital" name="MaritalStatus" required><option value="Single">Single</option><option value="Married">Married</option><option value="Divorced">Divorced</option></select></div>
+                    <div class="form-group"><label for="travel">Business Travel</label><select id="travel" name="BusinessTravel" required><option value="Travel_Frequently">Travel Frequently</option><option value="Travel_Rarely">Travel Rarely</option><option value="Non-Travel">Non-Travel</option></select></div>
+                </div>
+
+                <details class="advanced">
+                    <summary>Advanced Required Fields</summary>
+                    <div class="form-grid">
+                        <div class="form-group"><label for="dailyrate">Daily Rate</label><input id="dailyrate" name="DailyRate" type="number" min="1" value="1102" required></div>
+                        <div class="form-group"><label for="hourlyrate">Hourly Rate</label><input id="hourlyrate" name="HourlyRate" type="number" min="1" value="65" required></div>
+                        <div class="form-group"><label for="envsat">Environment Satisfaction (1-4)</label><input id="envsat" name="EnvironmentSatisfaction" type="number" min="1" max="4" value="2" required></div>
+                        <div class="form-group"><label for="jobinv">Job Involvement (1-4)</label><input id="jobinv" name="JobInvolvement" type="number" min="1" max="4" value="3" required></div>
+                        <div class="form-group"><label for="monthlyrate">Monthly Rate</label><input id="monthlyrate" name="MonthlyRate" type="number" min="1" value="19479" required></div>
+                        <div class="form-group"><label for="numcompanies">Num Companies Worked</label><input id="numcompanies" name="NumCompaniesWorked" type="number" min="0" value="1" required></div>
+                        <div class="form-group"><label for="salaryhike">Percent Salary Hike</label><input id="salaryhike" name="PercentSalaryHike" type="number" min="0" max="25" value="15" required></div>
+                        <div class="form-group"><label for="relsat">Relationship Satisfaction (1-4)</label><input id="relsat" name="RelationshipSatisfaction" type="number" min="1" max="4" value="3" required></div>
+                        <div class="form-group"><label for="stock">Stock Option Level (0-3)</label><input id="stock" name="StockOptionLevel" type="number" min="0" max="3" value="1" required></div>
+                        <div class="form-group"><label for="training">Training Times Last Year</label><input id="training" name="TrainingTimesLastYear" type="number" min="0" value="3" required></div>
+                        <div class="form-group"><label for="currentrole">Years In Current Role</label><input id="currentrole" name="YearsInCurrentRole" type="number" min="0" value="1" required></div>
+                        <div class="form-group"><label for="yearspromo">Years Since Last Promotion</label><input id="yearspromo" name="YearsSinceLastPromotion" type="number" min="0" value="1" required></div>
+                        <div class="form-group"><label for="yearsmanager">Years With Current Manager</label><input id="yearsmanager" name="YearsWithCurrManager" type="number" min="0" value="1" required></div>
+                    </div>
+                </details>
+
+                <button id="submitBtn" type="submit" class="button">Predict Attrition Risk</button>
+            </form>
+
+            <div id="errorBox" class="error"></div>
+        </div>
+
+        <div id="predictionResult" class="prediction-result">
+            <div class="risk-indicator">
+                <div id="riskCircle" class="risk-circle">--</div>
+                <div class="risk-details">
+                    <h3 id="riskLevel">-</h3>
+                    <p id="riskProbability">Attrition Probability: -</p>
+                </div>
+            </div>
+
+            <div class="risk-factors">
+                <h4>Top Risk Factors</h4>
+                <div id="riskFactorsList"></div>
+            </div>
+
+            <div id="recommendation" class="recommendation"></div>
+        </div>
+
+        <div class="nav-links">
+            <a href="/report">View EDA Report</a>
+            <a href="/docs">API Documentation</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById("predictionForm");
+        const resultDiv = document.getElementById("predictionResult");
+        const errorBox = document.getElementById("errorBox");
+        const submitBtn = document.getElementById("submitBtn");
+
+        const numericFields = [
+            "Age",
+            "DailyRate",
+            "DistanceFromHome",
+            "EnvironmentSatisfaction",
+            "HourlyRate",
+            "JobInvolvement",
+            "JobSatisfaction",
+            "MonthlyIncome",
+            "MonthlyRate",
+            "NumCompaniesWorked",
+            "PercentSalaryHike",
+            "RelationshipSatisfaction",
+            "StockOptionLevel",
+            "TrainingTimesLastYear",
+            "WorkLifeBalance",
+            "YearsAtCompany",
+            "YearsInCurrentRole",
+            "YearsSinceLastPromotion",
+            "YearsWithCurrManager",
+            "TotalWorkingYears"
+        ];
+
+        function parseApiError(errorBody) {
+            if (!errorBody || !errorBody.detail) {
+                return "Prediction failed";
+            }
+
+            if (Array.isArray(errorBody.detail)) {
+                return errorBody.detail
+                    .map(item => {
+                        const field = Array.isArray(item.loc) ? item.loc[item.loc.length - 1] : "field";
+                        return field + ": " + item.msg;
+                    })
+                    .join(" | ");
+            }
+
+            if (typeof errorBody.detail === "string") {
+                return errorBody.detail;
+            }
+
+            return "Prediction failed";
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            errorBox.classList.remove("show");
+            resultDiv.classList.remove("show");
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = "<span class=\"loading\"></span> Predicting...";
+
+            const payload = Object.fromEntries(new FormData(form));
+            numericFields.forEach(field => {
+                payload[field] = Number(payload[field]);
+            });
+
+            try {
+                const response = await fetch("/api/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.json();
+                    throw new Error(parseApiError(errorBody));
+                }
+
+                const result = await response.json();
+                displayResult(result);
+            } catch (error) {
+                errorBox.textContent = "Error: " + error.message;
+                errorBox.classList.add("show");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Predict Attrition Risk";
+            }
+        });
+
+        function displayResult(result) {
+            const probability = (result.attrition_probability * 100).toFixed(1);
+            const riskLevel = (result.risk_level || "LOW").toLowerCase();
+
+            const circle = document.getElementById("riskCircle");
+            circle.textContent = probability + "%";
+            circle.className = "risk-circle " + riskLevel;
+
+            document.getElementById("riskLevel").textContent = result.risk_level + " Risk";
+            document.getElementById("riskProbability").textContent = "Attrition Probability: " + probability + "%";
+
+            const factors = Array.isArray(result.top_risk_factors) ? result.top_risk_factors : [];
+            const factorsList = document.getElementById("riskFactorsList");
+
+            if (!factors.length) {
+                factorsList.innerHTML = "<p style=\"color:var(--muted);\">No strong risk factors detected.</p>";
+            } else {
+                factorsList.innerHTML = factors.map(factor => {
+                    const impact = (Number(factor.impact || 0) * 100).toFixed(1);
+                    return (
+                        "<div class=\"risk-factor-item\">" +
+                        "<span><strong>" + factor.feature + ":</strong> " + factor.value + "</span>" +
+                        "<span>+" + impact + "% risk</span>" +
+                        "</div>"
+                    );
+                }).join("");
+            }
+
+            document.getElementById("recommendation").textContent = result.recommendation || "No recommendation available.";
+            resultDiv.classList.add("show");
+        }
+    </script>
+</body>
+</html>

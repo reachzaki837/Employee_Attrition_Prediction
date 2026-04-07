@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseML - EDA Report</title>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --dark: #0f1117;
+            --surface: #1a1f2e;
+            --light: #f1f5f9;
+            --muted: #94a3b8;
+            --border: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 1.25rem;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: clamp(2rem, 4vw, 2.5rem);
+            margin-bottom: 0.25rem;
+        }
+
+        .tagline {
+            color: var(--muted);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 1rem;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
+        }
+
+        .chart-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            background: var(--dark);
+        }
+
+        .chart-title {
+            padding: 0.9rem;
+            border-top: 1px solid var(--border);
+            font-weight: 600;
+        }
+
+        .loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            color: var(--muted);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.6rem;
+            padding: 1rem;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+        }
+
+        .nav-links a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 520px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PulseML - EDA Report</h1>
+            <p class="tagline">Exploratory Data Analysis: Employee Attrition Patterns</p>
+        </header>
+
+        <div class="chart-grid" id="chartGrid">
+            <div class="loading">Loading EDA charts...</div>
+        </div>
+
+        <div class="nav-links">
+            <a href="/">Back to Dashboard</a>
+            <a href="/docs">API Documentation</a>
+        </div>
+    </div>
+
+    <script>
+        async function loadCharts() {
+            const grid = document.getElementById("chartGrid");
+
+            try {
+                const response = await fetch("/api/report-images");
+                const data = await response.json();
+                grid.innerHTML = "";
+
+                if (!data.images || !data.images.length) {
+                    grid.innerHTML = "<div class=\"loading\">No EDA charts found. Run the EDA script first.</div>";
+                    return;
+                }
+
+                data.images.forEach((img) => {
+                    const card = document.createElement("div");
+                    card.className = "chart-card";
+                    card.innerHTML =
+                        "<img class=\"chart-image\" src=\"" + img.path + "\" alt=\"" + img.title + "\" />" +
+                        "<div class=\"chart-title\">" + img.title + "</div>";
+                    grid.appendChild(card);
+                });
+            } catch (error) {
+                grid.innerHTML = "<div class=\"loading\">Error loading charts: " + error.message + "</div>";
+            }
+        }
+
+        loadCharts();
+    </script>
+</body>
+</html>
